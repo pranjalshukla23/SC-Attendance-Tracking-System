@@ -85,15 +85,13 @@ export default function Home() {
     return Math.ceil((days + firstJan.getDay() + 1) / 7);
   }
 
-  function reset() {
-    setTrainerName("");
-    setCity("");
-    setIsDay1Training(false);
-    setIsDay2Training(false);
-    setDay1Hours(0);
-    setDay2Hours(0);
-    setWeekNumber(0);
-  }
+  const handleDay1Change = (event) => {
+    setIsDay1Training(event.target.checked);
+  };
+
+  const handleDay2Change = (event) => {
+    setIsDay2Training(event.target.checked);
+  };
 
   function submitHandler() {
     if (!trainerName || !city || !weekNumber) {
@@ -113,21 +111,17 @@ export default function Home() {
         Day2_Hours: day2Hours,
         Week_Number: weekNumber,
       });
+      toast({
+        title: "Record added successfully",
+        status: "success",
+        duration: 9000,
+        isClosable: true,
+      });
     }
-
-    console.log(trainersTrackingList);
-
-    toast({
-      title: "Record added successfully",
-      status: "success",
-      duration: 9000,
-      isClosable: true,
-    });
-
-    reset();
   }
 
   function handleExport() {
+    console.log("trainers tracking list", trainersTrackingList);
     // Create a workbook
     const wb = XLSX.utils.book_new();
 
@@ -141,9 +135,6 @@ export default function Home() {
     XLSX.writeFile(wb, "SM_Trainer_Tracker.xlsx");
   }
 
-  useEffect(() => {
-    console.log(getWeekNumbers());
-  }, []);
   return (
     <Box
       pos={"relative"}
@@ -161,7 +152,7 @@ export default function Home() {
         border="1px solid gray"
         background="#fcfcfc"
       >
-        <Image src={"/logo.png"} width={50} height={50}></Image>
+        <Image src={"/logo.png"} alt="logo" width={50} height={50}></Image>
       </Box>
       <Text textDecor="underline" fontWeight="bold" fontSize={30} mb={4}>
         Trainer Attendance System
@@ -175,6 +166,7 @@ export default function Home() {
             <Select
               w="80%"
               placeholder="select driver name..."
+              value={trainerName}
               onChange={(e) => setTrainerName(e.target.value)}
               isRequired
             >
@@ -196,6 +188,7 @@ export default function Home() {
             <Select
               w="80%"
               placeholder="select city..."
+              value={city}
               onChange={(e) => setCity(e.target.value)}
               isRequired
             >
@@ -212,18 +205,24 @@ export default function Home() {
               Training Day{" "}
             </Text>
             <Stack spacing={5} direction="row">
-              <Checkbox
-                colorScheme="red"
-                onChange={(e) => setIsDay1Training((prevState) => !prevState)}
-              >
+              <label>
+                <input
+                  type="checkbox"
+                  name="checkbox1"
+                  checked={isDay1Training}
+                  onChange={handleDay1Change}
+                />
                 Day 1
-              </Checkbox>
-              <Checkbox
-                colorScheme="green"
-                onChange={(e) => setIsDay2Training((prevState) => !prevState)}
-              >
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  name="checkbox2"
+                  checked={isDay2Training}
+                  onChange={handleDay2Change}
+                />
                 Day 2
-              </Checkbox>
+              </label>
             </Stack>
           </Box>
           {isDay1Training && (
@@ -234,6 +233,7 @@ export default function Home() {
               <Select
                 w="80%"
                 placeholder="select training hours..."
+                value={day1Hours}
                 onChange={(e) => setDay1Hours(e.target.value)}
                 defaultValue={0}
               >
@@ -253,6 +253,7 @@ export default function Home() {
               <Select
                 w="80%"
                 placeholder="select training hours..."
+                value={day2Hours}
                 onChange={(e) => setDay2Hours(e.target.value)}
                 defaultValue={0}
               >
@@ -285,6 +286,7 @@ export default function Home() {
             <Select
               w="80%"
               placeholder="select week number..."
+              value={weekNumber}
               onChange={(e) => setWeekNumber(e.target.value)}
               isRequired
             >
@@ -296,7 +298,7 @@ export default function Home() {
             </Select>
           </Box>
           <Box display="flex" justifyContent="center">
-            <Button colorScheme="red" onClick={submitHandler}>
+            <Button type="submit" colorScheme="red" onClick={submitHandler}>
               Submit
             </Button>
           </Box>
@@ -309,7 +311,7 @@ export default function Home() {
         bottom={4}
         background="blue"
         color="white"
-        onClick={handleExport}
+        onClick={() => handleExport(trainersTrackingList)}
       >
         Export To Excel
       </Button>
