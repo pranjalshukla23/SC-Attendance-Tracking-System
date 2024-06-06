@@ -11,6 +11,7 @@ import {
   Select,
   Stack,
   Text,
+  Textarea,
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
@@ -50,18 +51,32 @@ const trainers = [
   "Abby Shaw",
   "Richard O-connell",
 ];
-const cities = ["DE", "NL", "UK", "ES", "AT"];
+const countries = ["DE", "NL", "UK", "ES", "AT"];
 const hours = ["1", "2", "3", "4", "5", "6", "7", "8"];
 export default function Home() {
   const toast = useToast();
   const [trainerName, setTrainerName] = useState("");
+  const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
+  const [feedback, setFeedback] = useState("");
   const [isDay1Training, setIsDay1Training] = useState(false);
   const [isDay2Training, setIsDay2Training] = useState(false);
   const [day1Hours, setDay1Hours] = useState(0);
   const [day2Hours, setDay2Hours] = useState(0);
   const [weekNumber, setWeekNumber] = useState(0);
-  const trainersTrackingList = [];
+  const [trainersTrackingList, setTrainersTrackingList] = useState([]);
+
+  const loadExistingFile = async () => {
+    const response = await fetch("/2024_SM_Trainer_Tracker-Mock-Sheet.xlsx");
+    const arrayBuffer = await response.arrayBuffer();
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    setTrainersTrackingList(jsonData);
+    console.log("read all records")
+  };
   function getWeekNumbers() {
     const weekNumbers = [];
     const startDate = new Date("2024-01-01");
@@ -94,7 +109,7 @@ export default function Home() {
   };
 
   function submitHandler() {
-    if (!trainerName || !city || !weekNumber) {
+    if (!trainerName || !country || !weekNumber || !city) {
       toast({
         title: "Please fill all the fields",
         status: "error",
@@ -102,15 +117,20 @@ export default function Home() {
         isClosable: true,
       });
     } else {
-      trainersTrackingList.push({
+      const record = {
         Trainer_Name: trainerName,
-        city: city,
+        Country: country,
+        City: city,
         Day1: isDay1Training === true ? "Present" : "Absent",
         Day2: isDay2Training === true ? "Present" : "Absent",
         Day1_Hours: day1Hours,
         Day2_Hours: day2Hours,
+        Total_Hours: day1Hours + day2Hours,
         Week_Number: weekNumber,
-      });
+        Feedback: feedback,
+      };
+      const newDataArr = [...trainersTrackingList, record];
+      setTrainersTrackingList(newDataArr);
       toast({
         title: "Record added successfully",
         status: "success",
@@ -135,6 +155,9 @@ export default function Home() {
     XLSX.writeFile(wb, "SM_Trainer_Tracker.xlsx");
   }
 
+  useEffect(() => {
+    loadExistingFile();
+  }, []);
   return (
     <Box
       pos={"relative"}
@@ -183,21 +206,31 @@ export default function Home() {
           </Box>
           <Box display="flex" gap={4} alignItems={"center"} my={2}>
             <Text w="20%" fontWeight="bold">
-              City
+              Country
             </Text>
             <Select
               w="80%"
-              placeholder="select city..."
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
+              placeholder="select country..."
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
               isRequired
             >
-              {cities.map((city) => (
-                <option value={city} key={city}>
-                  {city}
+              {countries.map((country) => (
+                <option value={country} key={country}>
+                  {country}
                 </option>
               ))}
             </Select>
+          </Box>
+          <Box display="flex" gap={4} alignItems={"center"} my={2}>
+            <Text w="20%" fontWeight="bold">
+              City
+            </Text>
+            <Input
+              w="80%"
+              onChange={(e) => setCity(e.target.value)}
+              value={city}
+            ></Input>
           </Box>
           <Box display="flex" gap={4} alignItems={"center"} my={2}>
             <Text w="20%" fontWeight="bold">
@@ -207,6 +240,9 @@ export default function Home() {
             <Stack spacing={5} direction="row">
               <label>
                 <input
+                  style={{
+                    marginRight: "2px",
+                  }}
                   type="checkbox"
                   name="checkbox1"
                   checked={isDay1Training}
@@ -216,6 +252,9 @@ export default function Home() {
               </label>
               <label>
                 <input
+                  style={{
+                    marginRight: "2px",
+                  }}
                   type="checkbox"
                   name="checkbox2"
                   checked={isDay2Training}
@@ -281,7 +320,7 @@ export default function Home() {
 
           <Box display="flex" gap={4} alignItems={"center"} my={2}>
             <Text w="20%" fontWeight="bold">
-              Select week number
+              Week number
             </Text>
             <Select
               w="80%"
@@ -296,6 +335,16 @@ export default function Home() {
                 </option>
               ))}
             </Select>
+          </Box>
+          <Box display="flex" gap={4} alignItems={"center"} my={2}>
+            <Text w="20%" fontWeight="bold">
+              Feedback
+            </Text>
+            <Textarea
+              placeholder="Enter Trainer Feedback..."
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+            />
           </Box>
           <Box display="flex" justifyContent="center">
             <Button type="submit" colorScheme="red" onClick={submitHandler}>
